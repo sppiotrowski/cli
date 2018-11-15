@@ -1,0 +1,4 @@
+# bash.cmd
+!!:p  # print last command
+# bash.test
+echo xyz
