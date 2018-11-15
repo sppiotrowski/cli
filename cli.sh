@@ -6,8 +6,9 @@ export SPP_HOME=${HOME}/_spp
 alias .date='echo $(date +%Y.%m.%d)'
 
 .cli.backup() {
-  cd "$SPP_HOME" && git commit -am "backup: $(.date)"
-  cd -
+  cd "$SPP_HOME" && \
+  git commit -am "backup: $(.date)" 
+  git push origin master
 }
 .cli.todo() {
   #_note.add "$SPP_HOME/cli.sh" "todo" "$@"
