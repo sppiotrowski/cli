@@ -6,14 +6,22 @@
 _note() {
   local file="$1"; shift
   local topic="$1"; shift
-  local cmd="sed -n '/$topic/,/#/p' $file"
+  if [ -z "$topic" ]; then
+    local cmd="cat $file"
+  else
+    local cmd="sed -n '/$topic/,/#/p' $file"
+  fi
   eval "$cmd"
 }
 
 _note.edit() {
   local file="$1"; shift
   local topic="$1"; shift
-  local cmd="vim +/$topic $file"
+  if [ -z "$topic" ]; then
+    local cmd="vim $file"
+  else
+    local cmd="vim +/$topic $file"
+  fi
   eval "$cmd"
 }
 

@@ -9,6 +9,3 @@ brew install shellcheck
 
 # python
 echo '{"a":"1"}' | python -m json.tool  # format json
-
-# bash
-test test
