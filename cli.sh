@@ -1,7 +1,12 @@
-# todo: simplify todo
-# todo: backup it
+#!/usr/bin/env bash
 
+# setup env
+export EDITOR=vim
+export BROWSER=chrome
 export SPP_HOME=${HOME}/_spp
+
+# shellcheck source=note.sh
+. ./note.sh
 
 alias .date='echo $(date +%Y.%m.%d)'
 
@@ -10,32 +15,9 @@ alias .date='echo $(date +%Y.%m.%d)'
   git commit -am "backup: $(.date)" 
   git push origin master
 }
+
 .cli.todo() {
-  #_note.add "$SPP_HOME/cli.sh" "todo" "$@"
-  echo 'NOOP'
-}
-_note() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  local cmd="sed -n '/$topic/,/#/p' $file"
-  eval "$cmd"
-}
-
-_note.edit() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  local cmd="vim +/$topic $file"
-  eval "$cmd"
-}
-
-_note.add() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  local tail="$@"
-  local cmd="echo '# $topic' >> $file"
-  eval "$cmd"
-  local cmd_tail="echo '$tail' >> $file"
-  eval "$cmd_tail"
+  _note.inline "$SPP_HOME/cli.sh" "todo" "$@"
 }
 
 HOWTO_FILE=${SPP_HOME}/howto.txt
