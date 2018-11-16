@@ -3,7 +3,7 @@
 # manage note file
 # _note.add <topic> <content> => # <topic> <\n> <content>
 
-_note() {
+_note.get() {
   local file="$1"; shift
   local topic="$1"; shift
   if [ -z "$topic" ]; then

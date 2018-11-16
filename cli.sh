@@ -22,13 +22,13 @@ alias .date='echo $(date +%Y.%m.%d)'
 }
 
 NOTES_FILE=${SPP_HOME}/notes.txt
-.note() {
-  _note "$NOTES_FILE" "$@"
+.note.get() {
+  _note.get "$NOTES_FILE" "$@"
 }
 .note.edit() {
   _note.edit "$NOTES_FILE" "$@"
 }
-.note.add() {
+.note() {
   _note.add "$NOTES_FILE" "$@"
 }
 .note.todo() {
