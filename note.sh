@@ -35,3 +35,4 @@ _note.inline() {
   local cmd="echo '# $topic': $tail >> $file"
   eval "$cmd"
 }
+# todo: handle empty label when note.get

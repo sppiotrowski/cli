@@ -21,13 +21,16 @@ alias .date='echo $(date +%Y.%m.%d)'
   _note.inline "$SPP_HOME/cli.sh" "todo" "$@"
 }
 
-HOWTO_FILE=${SPP_HOME}/howto.txt
-.howto() {
-  _note "$HOWTO_FILE" "$@"
+NOTES_FILE=${SPP_HOME}/notes.txt
+.note() {
+  _note "$NOTES_FILE" "$@"
 }
-.howto.edit() {
-  _note.edit "$HOWTO_FILE" "$@"
+.note.edit() {
+  _note.edit "$NOTES_FILE" "$@"
 }
-.howto.add() {
-  _note.add "$HOWTO_FILE" "$@"
+.note.add() {
+  _note.add "$NOTES_FILE" "$@"
+}
+.note.todo() {
+  _note.inline "$SPP_HOME/note.sh" "todo" "$@"
 }
