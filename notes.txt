@@ -5,7 +5,10 @@
 brew install shellcheck
 
 # bash.history
-# C-r -> C-xC-e # open in vim and exec
+C-r -> C-xC-e # open in vim and exec
 
 # python
 echo '{"a":"1"}' | python -m json.tool  # format json
+
+# test
+remove me

@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
 # manage note file
-# _note.add <topic> <content> => # <topic> <\n> <content>
-
 _note.get() {
   local file="$1"; shift
   local topic="$1"; shift
@@ -43,4 +41,20 @@ _note.inline() {
   local cmd="echo '# $topic': $tail >> $file"
   eval "$cmd"
 }
-# todo: handle empty label when note.get
+
+__note_titles() {
+  local part="$1"
+  grep -e "^# $part" notes.txt | sed 's/# //' | sort
+}
+
+__note_complete() {
+  # local cmd="${1##*/}"
+  # local line="${COMP_LINE}"
+  local word=${COMP_WORDS[COMP_CWORD]}
+   if [ -z "$word" ]; then
+     COMPREPLY=("$(__note_titles)")
+   else
+     COMPREPLY=("$(__note_titles "$word")")
+   fi
+}
+complete -F __note_complete _note.get

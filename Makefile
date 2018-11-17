@@ -1,6 +1,6 @@
 SHELL := /usr/bin/env bash
 lint:
-	@echo shellcheck -a -x *.sh
+	shellcheck -a -x *.sh src/*.sh
 
 push:
 	. ./cli.sh && .cli.backup
