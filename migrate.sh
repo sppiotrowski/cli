@@ -35,26 +35,6 @@ export TODO=${HOME}/todo.md
     vim "$HOME/howto.markdown"
 }
 
-.git.recreate() {
-    PROJ=$(.pr.current)
-    REPO=$(cat .git/config | grep url | awk -F' = ' '{ print $2 }')
-    if [ -z "$PROJ" ] || [ -z "$REPO" ]; then
-        echo 'ups...'
-        return 1
-    fi
-    read -p "rm -rf ./$PROJ? [N/y]" -n 1 -r
-    if [[ $REPLY =~ ^[Yy]$ ]]
-    then
-        cd ..
-        rm -rf "./$PROJ"
-        git clone "$REPO"
-        cd ./$PROJ
-    fi
-}
-.git.current1() {
-    git branch | grep '* ' | sed 's/\* //g' | tee /dev/tty | tr -d '\n' | pbcopy
-}
-
 .pr.current() {
   local projects_path="${PWD#*projects\/}"
   local current=$(cut -d'/' -f1 <<< "$projects_path")
@@ -93,14 +73,6 @@ alias .jenkins=.ci
 .git.clone() {
     PROJECT="$1"
     (cd "$PROJECTS_PATH" && git clone "git@github.com:paulsecret/${PROJECT}.git")
-}
-
-.git.current() {
-    git rev-parse --abbrev-ref HEAD
-}
-
-.git.current.jira() {
-    echo $(.git.current) | grep -o '^[A-Z]\+-[0-9]\+'
 }
 
 .jira() {

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
-# setup env
 export EDITOR=vim
 export BROWSER=chrome
-export SPP_HOME=${HOME}/_spp
+export SPP_HOME="$HOME/_spp"
 
 # shellcheck source=note.sh
-. ./note.sh
+. "$SPP_HOME"/note.sh
+
+# shellcheck source=note.sh
+. "$SPP_HOME"/git.sh
 
 alias .date='echo $(date +%Y.%m.%d)'
 
@@ -21,7 +23,7 @@ alias .date='echo $(date +%Y.%m.%d)'
   _note.inline "$SPP_HOME/cli.sh" "todo" "$@"
 }
 
-NOTES_FILE=${SPP_HOME}/notes.txt
+NOTES_FILE="$SPP_HOME"/notes.txt
 .note.get() {
   _note.get "$NOTES_FILE" "$@"
 }
@@ -34,3 +36,4 @@ NOTES_FILE=${SPP_HOME}/notes.txt
 .note.todo() {
   _note.inline "$SPP_HOME/note.sh" "todo" "$@"
 }
+# todo: pull request from cli
