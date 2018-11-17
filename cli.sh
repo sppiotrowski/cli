@@ -14,8 +14,6 @@ SRC="$SPP_HOME/src"
 # shellcheck source=src/project.sh
 . "$SRC"/project.sh
 
-alias .date='echo $(date +%Y.%m.%d)'
-
 .cli.backup() {
   cd "$SPP_HOME" && \
   git add .
