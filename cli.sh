@@ -19,7 +19,7 @@ alias .date='echo $(date +%Y.%m.%d)'
 .cli.backup() {
   cd "$SPP_HOME" && \
   git add .
-  git commit -m "backup: $(.date)" 
+  git commit -m "backup: $(.util.date)" 
   git push origin master
 }
 
