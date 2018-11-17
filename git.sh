@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 .git.current() {
-    git rev-parse --abbrev-ref HEAD
+echo $(git rev-parse --abbrev-ref HEAD)
 }
 
 .git.current.jira() {

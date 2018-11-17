@@ -1,2 +1,9 @@
+SHELL := /usr/bin/env bash
 lint:
-	shellcheck -a -x cli.sh
+	@echo shellcheck -a -x *.sh
+
+push:
+	. ./cli.sh && .cli.backup
+
+publish: lint push
+
