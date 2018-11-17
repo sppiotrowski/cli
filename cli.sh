@@ -5,6 +5,8 @@ export BROWSER=chrome
 export SPP_HOME="$HOME/_spp"
 SRC="$SPP_HOME/src"
 
+# shellcheck source=src/utils.sh
+. "$SRC"/utils.sh
 # shellcheck source=src/note.sh
 . "$SRC"/note.sh
 # shellcheck source=src/git.sh
