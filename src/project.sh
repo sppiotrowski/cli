@@ -28,7 +28,8 @@ _cd_complete() {
   # local cmd="${1##*/}"
   # local line="${COMP_LINE}"
   local word=${COMP_WORDS[COMP_CWORD]}
-  COMPREPLY=("$(_project_name "$word")")
+  # COMPREPLY=($(_project_name "$word"))  # shellcheck
+  mapfile -t COMPREPLY < <(_project_name "$word")
 }
 
 complete -F _cd_complete .cd

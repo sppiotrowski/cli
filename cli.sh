@@ -33,20 +33,17 @@ alias .n=.note
 
 _note_titles() {
   local part="$1"
-  grep -e "^# $part" "$NOTES_FILE" | sed 's/# //' | sort
+  grep -e "^## $part*" "$NOTES_FILE" | sed 's/## //' | sort
 }
 
 _note_complete() {
   local cmd="${1##*/}"
-  # local word=${COMP_WORDS[COMP_CWORD]}
+  local word=${COMP_WORDS[COMP_CWORD]}
   # local line=${COMP_LINE}
-   if [ -z "$word" ]; then
-     COMPREPLY=("$(_note_titles)")
-   else
-     COMPREPLY=("$(_note_titles "$word")")
-   fi
+  mapfile -t COMPREPLY < <(_note_titles "$word")
 }
 complete -F _note_complete .note
+complete -F _note_complete .n
 
 .note.edit() {
   _note.edit "$NOTES_FILE" "$@"

@@ -1,14 +1,11 @@
-# bash.cmd
+## bash.cmd
 !!:p  # print last command
 
-# osx
+## osx
 brew install shellcheck
 
-# bash.history
+## bash.history
 C-r -> C-xC-e # open in vim and exec
 
-# python
+## python
 echo '{"a":"1"}' | python -m json.tool  # format json
-
-# test
-remove me
