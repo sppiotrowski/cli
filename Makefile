@@ -7,3 +7,6 @@ push:
 
 publish: lint push
 
+install:
+	@./bin/setup.sh
+
