@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 SPP="${HOME}/_spp"
 
 if [ ! -d "$SPP" ]; then
-  ln -s "$DIR" "${HOME}/_spp"
+  ln -s "$DIR/../" "${HOME}/_spp"
   echo 'spp: dir linked'
 fi
 
