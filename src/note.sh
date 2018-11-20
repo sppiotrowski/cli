@@ -8,9 +8,9 @@ _note.get() {
   if [ -z "$topic" ]; then
     local cmd="cat $file"
   else
-    local cmd="sed -n '/$topic/,/$TITLE_MARKUP/p' $file"
+    local cmd="sed -n '/^$TITLE_MARKUP $topic/,/^$TITLE_MARKUP /p' $file"
   fi
-  eval "$cmd"
+  eval "$cmd" | sed '1d;$d'
 }
 
 _note.edit() {

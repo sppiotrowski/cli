@@ -1,11 +1,15 @@
-## bash.cmd
+## bash
+# C-r -> C-xC-e # open in vim and exec
 !!:p  # print last command
 
 ## osx
 brew install shellcheck
 
-## bash.history
-C-r -> C-xC-e # open in vim and exec
-
 ## python
 echo '{"a":"1"}' | python -m json.tool  # format json
+
+## vim
+todo: configure tpope/vim-surround
+
+## end
+
