@@ -13,6 +13,8 @@ SRC="$SPP_HOME/src"
 . "$SRC"/git.sh
 # shellcheck source=src/project.sh
 . "$SRC"/project.sh
+# shellcheck source=src/candidate.sh
+. "$SRC"/candidate.sh
 
 .cli.backup() {
   cd "$SPP_HOME" && \

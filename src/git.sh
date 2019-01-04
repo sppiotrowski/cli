@@ -4,6 +4,10 @@
   git rev-parse --abbrev-ref HEAD
 }
 
+.git.upstream() {
+  git push --set-upstream origin "$(.git.current)"
+}
+
 .git.current.jira() {
     .git.current | grep -o '^[A-Z]\+-[0-9]\+'
 }
