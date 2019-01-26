@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+case "$(uname -s)" in
+    Linux*)     os=linux;;
+    Darwin*)    os=osx;;
+    *)          os="UNKNOWN"
+esac
+export OS="$os"
+
 export EDITOR=vim
 export BROWSER=chrome
 export SPP_HOME="$HOME/_spp"
@@ -59,4 +66,3 @@ alias .na=.note.add
 .note.todo() {
   _note.inline "$SPP_HOME/note.sh" "todo" "$@"
 }
-# todo: pull request from cli

@@ -11,5 +11,10 @@ echo '{"a":"1"}' | python -m json.tool  # format json
 ## vim
 todo: configure tpope/vim-surround
 
-## end
-
+## linux
+sudo apt install mesa-utils
+# check vga
+lspci -v | VGA
+glxifno | grep OpenGL
+# test performance
+glxgears -info

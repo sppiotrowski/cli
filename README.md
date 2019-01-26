@@ -1,1 +1,4 @@
 # cli
+```sh
+make install
+```
