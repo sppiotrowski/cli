@@ -2,8 +2,12 @@
 
 CURRENT="$HOME/_current"
 
-.finder.current() {
-  local dir="$1"  
+.cd.current() {
+  cd "$CURRENT" || return 1
+}
+
+.current() {
+  local dir="${1:-$PWD}"  
   if [ ! -d "$dir" ]; then
     echo 'path is missing...'
     return 1

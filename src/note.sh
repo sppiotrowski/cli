@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 TITLE_MARKUP=##
+EDITOR=nvim
 
 _note.get() {
   local file="$1"; shift
@@ -17,9 +18,9 @@ _note.edit() {
   local file="$1"; shift
   local topic="$1"; shift
   if [ -z "$topic" ]; then
-    local cmd="vim $file"
+    local cmd="$EDITOR $file"
   else
-    local cmd="vim +/$topic $file"
+    local cmd="$EDITOR +/$topic $file"
   fi
   eval "$cmd"
 }

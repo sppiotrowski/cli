@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-export EDITOR=vim
+export EDITOR=nvim
 export BROWSER=chrome
 export SPP_HOME="$HOME/_spp"
 SRC="$SPP_HOME/src"
@@ -17,7 +17,7 @@ SRC="$SPP_HOME/src"
 . "$SRC"/candidate.sh
 
 .cli.backup() {
-  cd "$SPP_HOME" && \
+ cd "$SPP_HOME" && \
   git add .
   git commit -m "backup: $(.util.date)" 
   git push origin master
@@ -27,7 +27,7 @@ SRC="$SPP_HOME/src"
   _note.inline "$SPP_HOME/cli.sh" "todo" "$@"
 }
 
-NOTES_FILE="$SPP_HOME"/notes.txt
+NOTES_FILE="$SPP_HOME"/notes.md
 .note() {
   _note.get "$NOTES_FILE" "$@"
 }

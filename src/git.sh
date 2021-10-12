@@ -18,6 +18,12 @@
   open "https://outfittery.atlassian.net/browse/$ticket"
 }
 
+.git.ci() {
+  DEFAULT="$(.git.project_name)"
+  APP_NAME="${1:-"${DEFAULT}"}"
+  open "http://ci-1.dev.outfittery.de/search/?q=$APP_NAME"
+}
+
 .git.prune() {
   git fetch -p
   for branch in $(git branch | grep -v master | grep -v -e '^* '); do
