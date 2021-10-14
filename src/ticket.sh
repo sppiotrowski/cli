@@ -1,54 +1,134 @@
 #!/usr/bin/env bash
 
-TICKET_FILE="$HOME/.ticket"
-REQUESTS="$HOME/projects/cli/src/requests-polite.txt"
-EMOJIS="$HOME/projects/cli/src/emoji-polite.txt"
-MORNING_EMOJI="/Users/spi/projects/cli/src/emoji-morning.txt"
-MORNING_WISHES="/Users/spi/projects/cli/src/morning.txt"
+CURRENT_TICKET_PATH="${HOME}/.ticket"
+TICKETS_PATH="${HOME}/.tickets"
+POJECTS_PATH="${HOME}/_tickets_projects"
 
-.morning() {
-  local emoji
-  emoji=$(gshuf "$MORNING_EMOJI" | head -n 1 | tr -d '\n')
-  local wish
-  wish=$(gshuf "$MORNING_WISHES" | head -n 1 | tr -d '\n')
-  local msg="${wish} ${emoji}"
-  tr -d '\n' <<< "$msg" | pbcopy
-  echo "$msg"
-}
-alias .m=.morning
+JIRA_ID=1
+GIT_PROJECT=2
+DESC=3
 
-.ticket.clear() {
-  rm "$TICKET_FILE"
+_set_current_ticket() {
+  local jira_id="${1}"
+  if [ -z "$jira_id" ]; then
+    echo "current ticket: jira_id is missing"
+    exit 1
+  fi
+  echo "$jira_id" > "$CURRENT_TICKET_PATH"
 }
 
-.ticket.set() {
-  local ticket="${1}"
-  if [ -z "$ticket" ]; then
-    echo "the ticked id is missing"
-    exit 2
+_get_current_jira_id() {
+  local jira_id
+  jira_id="$(< "$CURRENT_TICKET_PATH")"
+  echo -n "$jira_id"
+}
+
+_get_current_value() {
+  local index="${1}"
+  local jira_id
+  jira_id="$(_get_current_jira_id)"
+  local ticket_path="${TICKETS_PATH}/${jira_id}"
+  if [ -z "$ticket_path" ]; then
+    echo "current ticket: file doesn't exist"
+    exit 1
+  fi
+  sed -n "${index}p" "$ticket_path"
+}
+
+_ticket_add() {
+  local jira_url="${1}"
+  if [ -z "$jira_url" ]; then
+    echo "ticket: jira_url is missing"
+    exit 1
   fi
 
-  local ticket_id="${ticket##*/}"
-  local ticket_desc="${*:2}"
-  local ticket_branch="${ticket_id}_${ticket_desc// /_}"
+  local git_project="${2}"
+  if [ -z "$git_project" ]; then
+    echo "ticket: git_project is missing"
+    exit 1
+  fi
 
-  echo "$ticket_id" > "$TICKET_FILE"
-  echo "$ticket" >> "$TICKET_FILE"
-  echo "$ticket_branch" >> "$TICKET_FILE"
+  local desc="${*:2}"
+  if [ -z "$desc" ]; then
+    echo "ticket: desc is missing"
+    exit 1
+  fi
 
-  local ask
-  ask=$(gshuf "$REQUESTS" | head -n 1)
-  local emoji
-  emoji=$(gshuf "$EMOJIS" | head -n 1)
-  echo "${emoji} PR to [${ticket_desc}](${ticket}). ${ask}" >> "$TICKET_FILE"
+  local jira_id="${jira_url##*/}"
+  if [ ! -d "$TICKETS_PATH" ]; then
+    mkdir -p "$TICKETS_PATH"
+  fi
+
+  local ticket_file="${TICKETS_PATH}/${jira_id}"
+  echo "$jira_id" > "$ticket_file"
+  echo "$git_project" >> "$ticket_file"
+  echo "$desc" >> "$ticket_file"
+
+  # echo "${emoji} PR to [${ticket_desc}](${jira_url}). ${ask}" >> "$TICKET_FILE"
 }
 
-alias .ts=.ticket.set
-
-.ticket.get() {
-  local ticket
-  ticket="$(< "$TICKET_FILE")"
-  tr -d '\n' <<< "$ticket" | pbcopy
-  echo -n "$ticket"
+.ticket.add() {
+  read -rp 'Jira id/url: ' jira_id
+  read -rp 'Git project: ' git_project
+  read -rp 'Ticket desc: ' desc
+  _ticket_add "$jira_id" "$git_project" "$desc"
 }
-alias .t=.ticket.get
+
+.ticket.cd() {
+  local jira_id
+  jira_id="$(_get_current_value "$JIRA_ID")"
+
+  local desc
+  desc="$(_get_current_value "$DESC")"
+
+  local git_project
+  git_project="$(_get_current_value "$GIT_PROJECT")"
+
+  local git_project_path="${POJECTS_PATH}/${git_project}"
+  if [ -z "$git_project_path" ]; then
+    (cd "${POJECTS_PATH}" && git clone "git@github.com:paulsecret/${git_project}.git")
+  fi
+
+  cd "$git_project" || return 1
+  git pull
+
+  local branch="${jira_id}_${desc// /_}"
+  git checkout -b "${branch}"
+}
+
+.ticket.commit() {
+  local desc
+  desc="$(_get_current_value "$DESC")"
+
+  local jira_id
+  jira_id="$(_get_current_value "$JIRA_ID")"
+
+  local git_project
+  git_project="$(_get_current_value "$GIT_PROJECT")"
+
+  local git_project_path="${POJECTS_PATH}/${git_project}"
+
+  if [ "$git_project_path" != "$(pwd)" ]; then
+    echo "ticket.commit: wrong directory"
+  fi
+
+  local pr_msg="${1:-desc}"
+  git commit -m "${jira_id} - ${pr_msg}"
+}
+
+.ticket.info() {
+  cat <<END
+  .ticket.add        # init jira/poject/desc
+  .ticket.cd         # cd project (setup branch)
+  .ticket.commit     # commit changes
+
+  .ticket.pr.build   # run Jenkins job for the PR branch
+  .ticket.pr.create  # create a new Github PR
+  .ticket.pr.msg     # create a new Slack PR request
+
+  .ticket.pr.merge   # merge Github PR to the main branch
+  .ticket.rel.build  # run Jenkins job for the main branch
+  .ticket.rel.msg    # create a new Slack pull request request
+  .ticket.done.jira  # close Jira ticket
+END
+}

@@ -15,10 +15,10 @@ SRC="$SPP_HOME/src"
 . "$SRC"/project.sh
 # shellcheck source=src/ticket.sh
 . "$SRC"/generate.sh
+# shellcheck source=src/ticket.sh
+. "$SRC"/ticket.sh
 # shellcheck source=src/candidate.sh
 # . "$SRC"/candidate.sh
-# shellcheck source=src/ticket.sh
-# . "$SRC"/ticket.sh
 
 .cli.backup() {
  cd "$SPP_HOME" && \

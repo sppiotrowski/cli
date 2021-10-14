@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-SCRIPT="$(realpath "$0")"
-SCRIPT_PATH="$(dirname "$SCRIPT")"
+# TODO: get from "${BASH_SOURCE[${#BASH_SOURCE[@]} - 1]}"
+SCRIPT_PATH="/Users/spi/projects/cli/src"
 DICT_PATH="${SCRIPT_PATH}/generate_dict"
 
 _gen_shuffle() {
