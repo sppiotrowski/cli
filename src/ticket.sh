@@ -8,6 +8,8 @@ JIRA_ID=1
 GIT_PROJECT=2
 DESC=3
 
+# TODO add usage stats
+
 _set_current_ticket() {
   local jira_id="${1}"
   if [ -z "$jira_id" ]; then
@@ -73,6 +75,7 @@ _ticket_add() {
   read -rp 'Ticket desc: ' desc
   _ticket_add "$jira_id" "$git_project" "$desc"
 }
+alias .tadd=.ticket.add
 
 .ticket.cd() {
   local jira_id
@@ -95,6 +98,7 @@ _ticket_add() {
   local branch="${jira_id}_${desc// /_}"
   git checkout -b "${branch}"
 }
+alias .tcd=.ticket.cd
 
 .ticket.commit() {
   local desc
@@ -115,9 +119,13 @@ _ticket_add() {
   local pr_msg="${1:-desc}"
   git commit -m "${jira_id} - ${pr_msg}"
 }
+alias .tc=.ticket.commit
 
-.ticket.info() {
+.ticket.help() {
   cat <<END
+  .ticket.help       # displays this message
+  .ticket.info       # displays a ticket info
+
   .ticket.add        # init jira/poject/desc
   .ticket.cd         # cd project (setup branch)
   .ticket.commit     # commit changes
@@ -132,3 +140,18 @@ _ticket_add() {
   .ticket.done.jira  # close Jira ticket
 END
 }
+alias .th=.ticket.help
+
+.ticket.info() {
+  local jira_id
+  jira_id="$(_get_current_value "$JIRA_ID")"
+
+  local desc
+  desc="$(_get_current_value "$DESC")"
+
+  local git_project
+  git_project="$(_get_current_value "$GIT_PROJECT")"
+  echo "${git_project} ${jira_id} ${desc}"
+}
+
+alias .ti=.ticket.info
