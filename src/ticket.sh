@@ -3,12 +3,15 @@
 CURRENT_TICKET_PATH="${HOME}/.ticket"
 TICKETS_PATH="${HOME}/.tickets"
 POJECTS_PATH="${HOME}/_tickets_projects"
+GIT_DEFAULT_BRANCH=master
 
 JIRA_ID=1
 GIT_PROJECT=2
 DESC=3
 
-# TODO add usage stats
+# TODO 
+# * add usage stats
+# * replace _xxx with __cli_xxx
 
 _set_current_ticket() {
   local jira_id="${1}"
@@ -50,7 +53,7 @@ _ticket_add() {
     exit 1
   fi
 
-  local desc="${*:2}"
+  local desc="${*:3}"
   if [ -z "$desc" ]; then
     echo "ticket: desc is missing"
     exit 1
@@ -66,7 +69,7 @@ _ticket_add() {
   echo "$git_project" >> "$ticket_file"
   echo "$desc" >> "$ticket_file"
 
-  # echo "${emoji} PR to [${ticket_desc}](${jira_url}). ${ask}" >> "$TICKET_FILE"
+  _set_current_ticket "$jira_id"
 }
 
 .ticket.add() {
@@ -76,6 +79,40 @@ _ticket_add() {
   _ticket_add "$jira_id" "$git_project" "$desc"
 }
 alias .tadd=.ticket.add
+
+_git_get_current_branch() {
+  git rev-parse --abbrev-ref HEAD
+}
+
+_ticket_git_checkout_branch() {
+  local jira_id="${1}"
+  local desc="${2}"
+  local branch="${jira_id}_${desc// /_}"
+  local current_branch
+  current_branch="$(_git_get_current_branch)"
+
+  if [[ -z $jira_id ]]; then
+    echo "${FUNCNAME[0]}: jira_id is missing"
+    return 1
+  fi
+
+  if [[ -z $desc ]]; then
+    echo "${FUNCNAME[0]}: desc is missing"
+    return 1
+  fi
+
+  if [[ $current_branch != "$GIT_DEFAULT_BRANCH" ]]; then
+    echo "${FUNCNAME[0]}: in $current_branch instead of $GIT_DEFAULT_BRANCH"
+    return 1
+  fi
+
+  if [[ $current_branch = "$branch" ]]; then
+    return 0
+  else
+    git pull
+    git checkout -b "${branch}"
+  fi
+}
 
 .ticket.cd() {
   local jira_id
@@ -88,15 +125,14 @@ alias .tadd=.ticket.add
   git_project="$(_get_current_value "$GIT_PROJECT")"
 
   local git_project_path="${POJECTS_PATH}/${git_project}"
-  if [ -z "$git_project_path" ]; then
-    (cd "${POJECTS_PATH}" && git clone "git@github.com:paulsecret/${git_project}.git")
+  if [ ! -d "$git_project_path" ]; then
+    (cd "${POJECTS_PATH}" && git clone "git@github.com:paulsecret/${git_project}.git") && cd "$git_project_path" || return 1
+  else
+    cd "$git_project_path" || return 1
   fi
 
-  cd "$git_project" || return 1
-  git pull
+  _ticket_git_checkout_branch "$jira_id" "$desc"
 
-  local branch="${jira_id}_${desc// /_}"
-  git checkout -b "${branch}"
 }
 alias .tcd=.ticket.cd
 
@@ -116,7 +152,7 @@ alias .tcd=.ticket.cd
     echo "ticket.commit: wrong directory"
   fi
 
-  local pr_msg="${1:-desc}"
+  local pr_msg="${1:-$desc}"
   git commit -m "${jira_id} - ${pr_msg}"
 }
 alias .tc=.ticket.commit
