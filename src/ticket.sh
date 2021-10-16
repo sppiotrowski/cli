@@ -28,10 +28,33 @@ _get_current_jira_id() {
   echo -n "$jira_id"
 }
 
+# TODO: rename to _ticet_get_value
+_get_value() {
+  local jira_id="${1}"
+  local index="${2}"
+  if [[ -z $jira_id ]]; then
+    echo "jira_id is missing"
+    return 1;
+  fi
+  if [[ -z $index ]]; then
+    echo "index is missing"
+    return 1;
+  fi
+
+  local ticket_path="${TICKETS_PATH}/${jira_id}"
+  if [ -z "$ticket_path" ]; then
+    echo "current ticket: file doesn't exist"
+    exit 1
+  fi
+  sed -n "${index}p" "$ticket_path"
+}
+
 _get_current_value() {
   local index="${1}"
-  local jira_id
-  jira_id="$(_get_current_jira_id)"
+  local current_jira_id
+  current_jira_id="$(_get_current_jira_id)"
+  local jira_id="${2:-$current_jira_id}"
+
   local ticket_path="${TICKETS_PATH}/${jira_id}"
   if [ -z "$ticket_path" ]; then
     echo "current ticket: file doesn't exist"
@@ -178,16 +201,31 @@ END
 }
 alias .th=.ticket.help
 
+# add pretty print option
 .ticket.info() {
-  local jira_id
-  jira_id="$(_get_current_value "$JIRA_ID")"
+  local current_jira_id
+  current_jira_id="$(_get_current_value "$JIRA_ID")"
+  local jira_id=${1:-$current_jira_id}
 
   local desc
-  desc="$(_get_current_value "$DESC")"
+  desc="$(_get_value "$jira_id" "$DESC")"
 
   local git_project
-  git_project="$(_get_current_value "$GIT_PROJECT")"
-  echo "${git_project} ${jira_id} ${desc}"
+  git_project="$(_get_value "$jira_id" "$GIT_PROJECT")"
+
+  local file_changed_date
+  file_changed_date=$(stat -t "%Y.%m.%d" -f "%Sc" "${TICKETS_PATH}/${jira_id}")
+
+  printf '%s %s %s %s\n' "$file_changed_date" "$jira_id" "$git_project" "$desc"
 }
 
 alias .ti=.ticket.info
+
+.ticket.ls() {
+  for ticket in "${TICKETS_PATH}"/*; do
+    local jira_id
+    jira_id=$(basename "$ticket")
+    .ticket.info "$jira_id"
+  done
+}
+alias .tls=.ticket.ls
