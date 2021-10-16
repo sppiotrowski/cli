@@ -1,19 +1,56 @@
 #!/usr/bin/env bash
 
-CURRENT_TICKET_PATH="${HOME}/.ticket"
-TICKETS_PATH="${HOME}/.tickets"
-POJECTS_PATH="${HOME}/_tickets_projects"
+CURRENT_TICKET_PATH="${SPP_CLI_HOME}/.ticket_current"
 GIT_DEFAULT_BRANCH=master
+
+TICKETS_PATH="${SPP_CLI_HOME}/tickets"
+if [[ ! -d "$TICKETS_PATH" ]]; then
+  mkdir -p "$TICKETS_PATH"
+fi
+
+PROJECTS_PATH="${SPP_CLI_HOME}/tickets_projects"
+if [[ ! -d "$PROJECTS_PATH" ]]; then
+  mkdir -p "$PROJECTS_PATH"
+fi
 
 JIRA_ID=1
 GIT_PROJECT=2
 DESC=3
 
-# TODO 
-# * add usage stats
-# * replace _xxx with __cli_xxx
+__spp_ticket_get_current_branch() {
+  git rev-parse --abbrev-ref HEAD
+}
 
-_set_current_ticket() {
+__spp_ticket_checkout_branch() {
+  local jira_id="${1}"
+  local desc="${2}"
+  local branch="${jira_id}_${desc// /_}"
+  local current_branch
+  current_branch="$(__spp_ticket_get_current_branch)"
+
+  if [[ -z $jira_id ]]; then
+    echo "${FUNCNAME[0]}: jira_id is missing"
+    return 1
+  fi
+
+  if [[ -z $desc ]]; then
+    echo "${FUNCNAME[0]}: desc is missing"
+    return 1
+  fi
+
+  if [[ $current_branch = "$branch" ]]; then
+    return 0
+  else
+    if [[ $current_branch != "$GIT_DEFAULT_BRANCH" ]]; then
+      echo "${FUNCNAME[0]}: in $current_branch instead of $GIT_DEFAULT_BRANCH"
+      return 1
+    fi
+    git pull
+    git checkout -b "${branch}"
+  fi
+}
+
+__spp_ticket_set_current() {
   local jira_id="${1}"
   if [ -z "$jira_id" ]; then
     echo "current ticket: jira_id is missing"
@@ -22,14 +59,13 @@ _set_current_ticket() {
   echo "$jira_id" > "$CURRENT_TICKET_PATH"
 }
 
-_get_current_jira_id() {
+__spp_ticket_get_current() {
   local jira_id
   jira_id="$(< "$CURRENT_TICKET_PATH")"
   echo -n "$jira_id"
 }
 
-# TODO: rename to _ticet_get_value
-_get_value() {
+__spp_ticket_get_value() {
   local jira_id="${1}"
   local index="${2}"
   if [[ -z $jira_id ]]; then
@@ -49,10 +85,10 @@ _get_value() {
   sed -n "${index}p" "$ticket_path"
 }
 
-_get_current_value() {
+__spp_ticket_get_current_value() {
   local index="${1}"
   local current_jira_id
-  current_jira_id="$(_get_current_jira_id)"
+  current_jira_id="$(__spp_ticket_get_current)"
   local jira_id="${2:-$current_jira_id}"
 
   local ticket_path="${TICKETS_PATH}/${jira_id}"
@@ -63,7 +99,7 @@ _get_current_value() {
   sed -n "${index}p" "$ticket_path"
 }
 
-_ticket_add() {
+__spp_ticket_add() {
   local jira_url="${1}"
   if [ -z "$jira_url" ]; then
     echo "ticket: jira_url is missing"
@@ -92,84 +128,71 @@ _ticket_add() {
   echo "$git_project" >> "$ticket_file"
   echo "$desc" >> "$ticket_file"
 
-  _set_current_ticket "$jira_id"
+  __spp_ticket_set_current "$jira_id"
+}
+
+__spp_ticket_info() {
+  local current_jira_id
+  current_jira_id="$(__spp_ticket_get_current_value "$JIRA_ID")"
+  local jira_id=${1:-$current_jira_id}
+
+  local desc
+  desc="$(__spp_ticket_get_value "$jira_id" "$DESC")"
+
+  local git_project
+  git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
+
+  local file_changed_date
+  file_changed_date=$(stat -t "%Y.%m.%d" -f "%Sc" "${TICKETS_PATH}/${jira_id}")
+
+  printf '%s %s %s %s\n' "$file_changed_date" "$jira_id" "$git_project" "$desc"
 }
 
 .ticket.add() {
+  __spp_stat "${FUNCNAME[0]}"
   read -rp 'Jira id/url: ' jira_id
   read -rp 'Git project: ' git_project
   read -rp 'Ticket desc: ' desc
-  _ticket_add "$jira_id" "$git_project" "$desc"
+  __spp_ticket_add "$jira_id" "$git_project" "$desc"
 }
 alias .tadd=.ticket.add
 
-_git_get_current_branch() {
-  git rev-parse --abbrev-ref HEAD
-}
-
-_ticket_git_checkout_branch() {
-  local jira_id="${1}"
-  local desc="${2}"
-  local branch="${jira_id}_${desc// /_}"
-  local current_branch
-  current_branch="$(_git_get_current_branch)"
-
-  if [[ -z $jira_id ]]; then
-    echo "${FUNCNAME[0]}: jira_id is missing"
-    return 1
-  fi
-
-  if [[ -z $desc ]]; then
-    echo "${FUNCNAME[0]}: desc is missing"
-    return 1
-  fi
-
-  if [[ $current_branch != "$GIT_DEFAULT_BRANCH" ]]; then
-    echo "${FUNCNAME[0]}: in $current_branch instead of $GIT_DEFAULT_BRANCH"
-    return 1
-  fi
-
-  if [[ $current_branch = "$branch" ]]; then
-    return 0
-  else
-    git pull
-    git checkout -b "${branch}"
-  fi
-}
 
 .ticket.cd() {
+  __spp_stat "${FUNCNAME[0]}"
   local jira_id
-  jira_id="$(_get_current_value "$JIRA_ID")"
+  jira_id="$(__spp_ticket_get_current_value "$JIRA_ID")"
 
   local desc
-  desc="$(_get_current_value "$DESC")"
+  desc="$(__spp_ticket_get_current_value "$DESC")"
 
   local git_project
-  git_project="$(_get_current_value "$GIT_PROJECT")"
+  git_project="$(__spp_ticket_get_current_value "$GIT_PROJECT")"
 
-  local git_project_path="${POJECTS_PATH}/${git_project}"
+  local git_project_path="${PROJECTS_PATH}/${git_project}"
   if [ ! -d "$git_project_path" ]; then
-    (cd "${POJECTS_PATH}" && git clone "git@github.com:paulsecret/${git_project}.git") && cd "$git_project_path" || return 1
+    (cd "${PROJECTS_PATH}" && git clone "git@github.com:paulsecret/${git_project}.git") && cd "$git_project_path" || return 1
   else
     cd "$git_project_path" || return 1
   fi
 
-  _ticket_git_checkout_branch "$jira_id" "$desc"
+  __spp_ticket_checkout_branch "$jira_id" "$desc"
 
 }
 alias .tcd=.ticket.cd
 
 .ticket.commit() {
+  __spp_stat "${FUNCNAME[0]}"
   local desc
-  desc="$(_get_current_value "$DESC")"
+  desc="$(__spp_ticket_get_current_value "$DESC")"
 
   local jira_id
-  jira_id="$(_get_current_value "$JIRA_ID")"
+  jira_id="$(__spp_ticket_get_current_value "$JIRA_ID")"
 
   local git_project
-  git_project="$(_get_current_value "$GIT_PROJECT")"
+  git_project="$(__spp_ticket_get_current_value "$GIT_PROJECT")"
 
-  local git_project_path="${POJECTS_PATH}/${git_project}"
+  local git_project_path="${PROJECTS_PATH}/${git_project}"
 
   if [ "$git_project_path" != "$(pwd)" ]; then
     echo "ticket.commit: wrong directory"
@@ -181,6 +204,7 @@ alias .tcd=.ticket.cd
 alias .tc=.ticket.commit
 
 .ticket.help() {
+  __spp_stat "${FUNCNAME[0]}"
   cat <<END
   .ticket.help       # displays this message
   .ticket.info       # displays a ticket info
@@ -201,31 +225,18 @@ END
 }
 alias .th=.ticket.help
 
-# add pretty print option
 .ticket.info() {
-  local current_jira_id
-  current_jira_id="$(_get_current_value "$JIRA_ID")"
-  local jira_id=${1:-$current_jira_id}
-
-  local desc
-  desc="$(_get_value "$jira_id" "$DESC")"
-
-  local git_project
-  git_project="$(_get_value "$jira_id" "$GIT_PROJECT")"
-
-  local file_changed_date
-  file_changed_date=$(stat -t "%Y.%m.%d" -f "%Sc" "${TICKETS_PATH}/${jira_id}")
-
-  printf '%s %s %s %s\n' "$file_changed_date" "$jira_id" "$git_project" "$desc"
+  __spp_stat "${FUNCNAME[0]}"
+  __spp_ticket_info "$1"
 }
-
 alias .ti=.ticket.info
 
 .ticket.ls() {
+  __spp_stat "${FUNCNAME[0]}"
   for ticket in "${TICKETS_PATH}"/*; do
     local jira_id
     jira_id=$(basename "$ticket")
-    .ticket.info "$jira_id"
+    __spp_ticket_info "$jira_id"
   done
 }
 alias .tls=.ticket.ls

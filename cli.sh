@@ -2,9 +2,17 @@
 
 export EDITOR=nvim
 export BROWSER=chrome
+
+export SPP_CLI_HOME="${HOME}/.spp/cli"
+if [[ ! -d "$SPP_CLI_HOME" ]]; then
+  mkdir -p "$SPP_CLI_HOME"
+fi
+
 export SPP_HOME="$HOME/_spp"
 SRC="$SPP_HOME/src"
 
+# shellcheck source=src/stats.sh
+. "$SRC"/stats.sh
 # shellcheck source=src/utils.sh
 . "$SRC"/utils.sh
 # shellcheck source=src/note.sh
@@ -13,7 +21,7 @@ SRC="$SPP_HOME/src"
 . "$SRC"/git.sh
 # shellcheck source=src/project.sh
 . "$SRC"/project.sh
-# shellcheck source=src/ticket.sh
+# shellcheck source=src/generate.sh
 . "$SRC"/generate.sh
 # shellcheck source=src/ticket.sh
 . "$SRC"/ticket.sh
