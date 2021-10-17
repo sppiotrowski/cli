@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+set -o nounset
+set -o pipefail
+# set -o errexit
+# set -o xtrace
+
 export EDITOR=nvim
 export BROWSER=chrome
 
@@ -17,21 +22,30 @@ SRC="$SPP_HOME/src"
 # shellcheck source=src/jira.sh
 . "$SRC"/jira.sh
 
+# shellcheck source=src/github.sh
+. "$SRC"/github.sh
+
 # shellcheck source=src/jenkins.sh
 . "$SRC"/jenkins.sh
 
 # shellcheck source=src/utils.sh
 . "$SRC"/utils.sh
+
 # shellcheck source=src/note.sh
 . "$SRC"/note.sh
+
 # shellcheck source=src/git.sh
 . "$SRC"/git.sh
+
 # shellcheck source=src/project.sh
 . "$SRC"/project.sh
+
 # shellcheck source=src/generate.sh
 . "$SRC"/generate.sh
+
 # shellcheck source=src/ticket.sh
 . "$SRC"/ticket.sh
+
 # shellcheck source=src/candidate.sh
 # . "$SRC"/candidate.sh
 

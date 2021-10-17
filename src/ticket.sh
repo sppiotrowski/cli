@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 # TODO: add ticket script desc
+# set -o xtrace
 
 SPP_TICKET_CURRENT_FILE="${SPP_CLI_HOME}/.ticket_current"
 SPP_DEFAULT_GIT_BRANCH=master
@@ -23,10 +24,17 @@ __spp_ticket_get_current_branch() {
   git rev-parse --abbrev-ref HEAD
 }
 
-__spp_ticket_checkout_branch() {
+__spp_ticket_get_branch() {
   local jira_id="${1}"
   local desc="${2}"
   local branch="${jira_id}_${desc// /_}"
+  echo -n "$branch"
+}
+__spp_ticket_checkout_branch() {
+  local jira_id="${1}"
+  local desc="${2}"
+  local branch
+  branch="$(__spp_ticket_get_branch "$jira_id" "$desc")"
   local current_branch
   current_branch="$(__spp_ticket_get_current_branch)"
 
@@ -184,7 +192,8 @@ alias .tadd=.ticket.add
 alias .tcd=.ticket.cd
 
 .ticket.commit() {
-  __spp_stat "${FUNCNAME[0]}"
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
   local desc
   desc="$(__spp_ticket_get_current_value "$DESC")"
 
@@ -197,10 +206,18 @@ alias .tcd=.ticket.cd
   local git_project_path="${SPP_TICKET_PROJECTS_PATH}/${git_project}"
 
   if [ "$git_project_path" != "$(pwd)" ]; then
-    echo "ticket.commit: wrong directory"
+    echo "$func_name: wrong directory"
   fi
 
   local pr_msg="${1:-$desc}"
+
+  if [[ ! -z $(git status -s) ]]; then
+    read -rp "$func_name: staged files, add? [Y/n]" choice
+    if [[ $choice = 'n' ]]; then
+      return 1
+    fi
+    git add -p
+  fi
   git commit -m "${jira_id} - ${pr_msg}"
 }
 alias .tc=.ticket.commit
@@ -217,19 +234,69 @@ alias .tc=.ticket.commit
 
   .ticket.pr.build   # run Jenkins job for the PR branch
   .ticket.pr.create  # create a new Github PR
-  .ticket.pr.msg     # create a new Slack PR request
+  .ticket.pr.msg     [TODO] # create a new Slack PR request
 
-  .ticket.pr.merge   # merge Github PR to the main branch
+  .ticket.pr.merge   # [TODO] merge Github PR to the main branch
   .ticket.rel.build  # run Jenkins job for the main branch
-  .ticket.rel.msg    # create a new Slack pull request request
-  .ticket.done.jira  # close Jira ticket
+  .ticket.rel.msg    # [TODO] create a new Slack pull request request
+  .ticket.done.jira  # [TODO] close Jira ticket
 END
 }
 alias .th=.ticket.help
 
+.ticket.pr.build() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  local jira_id="${1:-$(__spp_ticket_get_current)}"
+
+  local git_project
+  git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
+
+  local desc
+  desc="$(__spp_ticket_get_value "$jira_id" "$DESC")"
+
+  local git_branch
+  git_branch="$(__spp_ticket_get_branch "$jira_id" "$desc")"
+
+  if [[ ! -z "$(git log --branches --not --remotes --no-walk --decorate --oneline | grep "$git_branch")" ]]; then
+    read -rp "$func_name: not remote, push --set-upstream origin ${git_branch}? [Y/n]" choice
+    if [[ $choice = 'n' ]]; then
+      return 1
+    fi
+    git push --set-upstream origin "$git_branch"
+  fi
+
+  .jenkins.job "$git_project" "$git_branch"
+}
+
+.ticket.pr.create() {
+  __spp_stat "${FUNCNAME[0]}"
+  local jira_id="${1:-$(__spp_ticket_get_current)}"
+
+  local git_project
+  git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
+
+  local desc
+  desc="$(__spp_ticket_get_value "$jira_id" "$DESC")"
+
+  local git_branch
+  git_branch="$(__spp_ticket_get_branch "$jira_id" "$desc")"
+  .github.pull "$git_project" "$git_branch" "$jira_id" "$desc"
+}
+
+.ticket.pr.release() {
+  __spp_stat "${FUNCNAME[0]}"
+  local jira_id="${1:-$(__spp_ticket_get_current)}"
+
+  local git_project
+  git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
+
+  .jenkins.job "$git_project" "master"
+}
+
 .ticket.info() {
   __spp_stat "${FUNCNAME[0]}"
-  __spp_ticket_info "$1"
+  __spp_ticket_info "${1-$(__spp_ticket_get_current)}"
 }
 alias .ti=.ticket.info
 
