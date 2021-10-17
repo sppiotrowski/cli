@@ -13,6 +13,8 @@ SRC="$SPP_HOME/src"
 
 # shellcheck source=src/stats.sh
 . "$SRC"/stats.sh
+# shellcheck source=src/jira.sh
+. "$SRC"/jira.sh
 # shellcheck source=src/utils.sh
 . "$SRC"/utils.sh
 # shellcheck source=src/note.sh

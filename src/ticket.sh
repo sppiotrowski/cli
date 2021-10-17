@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 
-CURRENT_TICKET_PATH="${SPP_CLI_HOME}/.ticket_current"
-GIT_DEFAULT_BRANCH=master
+# TODO: add ticket script desc
 
-TICKETS_PATH="${SPP_CLI_HOME}/tickets"
-if [[ ! -d "$TICKETS_PATH" ]]; then
-  mkdir -p "$TICKETS_PATH"
+SPP_TICKET_CURRENT_FILE="${SPP_CLI_HOME}/.ticket_current"
+SPP_DEFAULT_GIT_BRANCH=master
+
+SPP_TICKETS_PATH="${SPP_CLI_HOME}/tickets"
+if [[ ! -d "$SPP_TICKETS_PATH" ]]; then
+  mkdir -p "$SPP_TICKETS_PATH"
 fi
 
-PROJECTS_PATH="${SPP_CLI_HOME}/tickets_projects"
-if [[ ! -d "$PROJECTS_PATH" ]]; then
-  mkdir -p "$PROJECTS_PATH"
+SPP_TICKET_PROJECTS_PATH="${SPP_CLI_HOME}/tickets_projects"
+if [[ ! -d "$SPP_TICKET_PROJECTS_PATH" ]]; then
+  mkdir -p "$SPP_TICKET_PROJECTS_PATH"
 fi
 
 JIRA_ID=1
@@ -41,8 +43,8 @@ __spp_ticket_checkout_branch() {
   if [[ $current_branch = "$branch" ]]; then
     return 0
   else
-    if [[ $current_branch != "$GIT_DEFAULT_BRANCH" ]]; then
-      echo "${FUNCNAME[0]}: in $current_branch instead of $GIT_DEFAULT_BRANCH"
+    if [[ $current_branch != "$SPP_DEFAULT_GIT_BRANCH" ]]; then
+      echo "${FUNCNAME[0]}: in $current_branch instead of $SPP_DEFAULT_GIT_BRANCH"
       return 1
     fi
     git pull
@@ -56,12 +58,12 @@ __spp_ticket_set_current() {
     echo "current ticket: jira_id is missing"
     exit 1
   fi
-  echo "$jira_id" > "$CURRENT_TICKET_PATH"
+  echo "$jira_id" > "$SPP_TICKET_CURRENT_FILE"
 }
 
 __spp_ticket_get_current() {
   local jira_id
-  jira_id="$(< "$CURRENT_TICKET_PATH")"
+  jira_id="$(< "$SPP_TICKET_CURRENT_FILE")"
   echo -n "$jira_id"
 }
 
@@ -77,7 +79,7 @@ __spp_ticket_get_value() {
     return 1;
   fi
 
-  local ticket_path="${TICKETS_PATH}/${jira_id}"
+  local ticket_path="${SPP_TICKETS_PATH}/${jira_id}"
   if [ -z "$ticket_path" ]; then
     echo "current ticket: file doesn't exist"
     exit 1
@@ -91,7 +93,7 @@ __spp_ticket_get_current_value() {
   current_jira_id="$(__spp_ticket_get_current)"
   local jira_id="${2:-$current_jira_id}"
 
-  local ticket_path="${TICKETS_PATH}/${jira_id}"
+  local ticket_path="${SPP_TICKETS_PATH}/${jira_id}"
   if [ -z "$ticket_path" ]; then
     echo "current ticket: file doesn't exist"
     exit 1
@@ -119,11 +121,11 @@ __spp_ticket_add() {
   fi
 
   local jira_id="${jira_url##*/}"
-  if [ ! -d "$TICKETS_PATH" ]; then
-    mkdir -p "$TICKETS_PATH"
+  if [ ! -d "$SPP_TICKETS_PATH" ]; then
+    mkdir -p "$SPP_TICKETS_PATH"
   fi
 
-  local ticket_file="${TICKETS_PATH}/${jira_id}"
+  local ticket_file="${SPP_TICKETS_PATH}/${jira_id}"
   echo "$jira_id" > "$ticket_file"
   echo "$git_project" >> "$ticket_file"
   echo "$desc" >> "$ticket_file"
@@ -143,7 +145,7 @@ __spp_ticket_info() {
   git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
 
   local file_changed_date
-  file_changed_date=$(stat -t "%Y.%m.%d" -f "%Sc" "${TICKETS_PATH}/${jira_id}")
+  file_changed_date=$(stat -t "%Y.%m.%d" -f "%Sc" "${SPP_TICKETS_PATH}/${jira_id}")
 
   printf '%s %s %s %s\n' "$file_changed_date" "$jira_id" "$git_project" "$desc"
 }
@@ -169,9 +171,9 @@ alias .tadd=.ticket.add
   local git_project
   git_project="$(__spp_ticket_get_current_value "$GIT_PROJECT")"
 
-  local git_project_path="${PROJECTS_PATH}/${git_project}"
+  local git_project_path="${SPP_TICKET_PROJECTS_PATH}/${git_project}"
   if [ ! -d "$git_project_path" ]; then
-    (cd "${PROJECTS_PATH}" && git clone "git@github.com:paulsecret/${git_project}.git") && cd "$git_project_path" || return 1
+    (cd "${SPP_TICKET_PROJECTS_PATH}" && git clone "git@github.com:paulsecret/${git_project}.git") && cd "$git_project_path" || return 1
   else
     cd "$git_project_path" || return 1
   fi
@@ -192,7 +194,7 @@ alias .tcd=.ticket.cd
   local git_project
   git_project="$(__spp_ticket_get_current_value "$GIT_PROJECT")"
 
-  local git_project_path="${PROJECTS_PATH}/${git_project}"
+  local git_project_path="${SPP_TICKET_PROJECTS_PATH}/${git_project}"
 
   if [ "$git_project_path" != "$(pwd)" ]; then
     echo "ticket.commit: wrong directory"
@@ -233,7 +235,7 @@ alias .ti=.ticket.info
 
 .ticket.ls() {
   __spp_stat "${FUNCNAME[0]}"
-  for ticket in "${TICKETS_PATH}"/*; do
+  for ticket in "${SPP_TICKETS_PATH}"/*; do
     local jira_id
     jira_id=$(basename "$ticket")
     __spp_ticket_info "$jira_id"
