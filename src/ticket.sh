@@ -51,12 +51,12 @@ __spp_ticket_checkout_branch() {
   if [[ $current_branch = "$branch" ]]; then
     return 0
   else
-    if [[ $current_branch != "$SPP_DEFAULT_GIT_BRANCH" ]]; then
-      echo "${FUNCNAME[0]}: in $current_branch instead of $SPP_DEFAULT_GIT_BRANCH"
-      return 1
+    if [[ -z "$(git rev-parse --verify "$current_branch" 2>/dev/null)" ]]; then
+      git checkout master
+      git pull
+      git checkout -b "${branch}"
     fi
-    git pull
-    git checkout -b "${branch}"
+    git checkout "${branch}"
   fi
 }
 
@@ -141,21 +141,24 @@ __spp_ticket_add() {
   __spp_ticket_set_current "$jira_id"
 }
 
-__spp_ticket_info() {
-  local current_jira_id
-  current_jira_id="$(__spp_ticket_get_current_value "$JIRA_ID")"
-  local jira_id=${1:-$current_jira_id}
+BOLD=$(tput bold)
+DEFAULT=$(tput sgr0)
 
+__spp_ticket_info() {
+  local jira_id="${1:-$(__spp_ticket_get_current_value "$JIRA_ID")}"
+  local option="${2-}"
   local desc
   desc="$(__spp_ticket_get_value "$jira_id" "$DESC")"
-
   local git_project
   git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
+  # local file_changed_date
+  # file_changed_date=$(stat -t "%Y.%m.%d" -f "%Sc" "${SPP_TICKETS_PATH}/${jira_id}")
 
-  local file_changed_date
-  file_changed_date=$(stat -t "%Y.%m.%d" -f "%Sc" "${SPP_TICKETS_PATH}/${jira_id}")
-
-  printf '%s %s %s %s\n' "$file_changed_date" "$jira_id" "$git_project" "$desc"
+  if [[ "$option" = '--porcelain' || "$option" = '-p' ]]; then
+    printf '%s %s %s\n' "$jira_id" "$git_project" "$desc"
+  else
+    printf '%s %s %s\n' "$jira_id" "${BOLD}${git_project}${DEFAULT}" "$desc"
+  fi
 }
 
 .ticket.add() {
@@ -225,21 +228,23 @@ alias .tc=.ticket.commit
 .ticket.help() {
   __spp_stat "${FUNCNAME[0]}"
   cat <<END
-  .ticket.help       # displays this message
-  .ticket.info       # displays a ticket info
+  .ticket.help       .th    # displays this message
+  .ticket.info       .ti    # displays a ticket info
+  .ticket.ls         .tls   # list tickets info
+  .ticket.switch     .ts    # switch current ticket
 
-  .ticket.add        # init jira/poject/desc
-  .ticket.cd         # cd project (setup branch)
-  .ticket.commit     # commit changes
+  .ticket.add        .tadd  # init jira/poject/desc
+  .ticket.cd         .tcd   # cd project (setup branch)
+  .ticket.commit     .tc    # commit changes
 
-  .ticket.pr.build   # run Jenkins job for the PR branch
-  .ticket.pr.create  # create a new Github PR
-  .ticket.pr.msg     [TODO] # create a new Slack PR request
+  .ticket.pr.create  .tpc   # create a new Github PR
+  .ticket.pr.build   .tpb   # run Jenkins job for the PR branch
+  .ticket.pr.msg     .tpm   # [TODO]  # create a new Slack PR request
 
-  .ticket.pr.merge   # [TODO] merge Github PR to the main branch
-  .ticket.rel.build  # run Jenkins job for the main branch
-  .ticket.rel.msg    # [TODO] create a new Slack pull request request
-  .ticket.done.jira  # [TODO] close Jira ticket
+  .ticket.pr.merge   .tpm   # [TODO] merge Github PR to the main branch
+  .ticket.rel.build  .trb   # run Jenkins job for the main branch
+  .ticket.rel.msg    .trm   # [TODO] create a new Slack pull request request
+  .ticket.done.jira  .tdone # [TODO] close Jira ticket
 END
 }
 alias .th=.ticket.help
@@ -248,6 +253,11 @@ alias .th=.ticket.help
   local func_name="${FUNCNAME[0]}"
   __spp_stat "$func_name"
   local jira_id="${1:-$(__spp_ticket_get_current)}"
+
+  read -rp "$func_name: Do you want to tregger build for: ${jira_id}? [Y/n]" choice
+  if [[ $choice = 'n' ]]; then
+    return 1
+  fi
 
   local git_project
   git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
@@ -268,10 +278,17 @@ alias .th=.ticket.help
 
   .jenkins.job "$git_project" "$git_branch"
 }
+alias .tpb=.ticket.build
 
 .ticket.pr.create() {
-  __spp_stat "${FUNCNAME[0]}"
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
   local jira_id="${1:-$(__spp_ticket_get_current)}"
+
+  read -rp "$func_name: Do you want to create PR for: ${jira_id}? [Y/n]" choice
+  if [[ $choice = 'n' ]]; then
+    return 1
+  fi
 
   local git_project
   git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
@@ -283,29 +300,58 @@ alias .th=.ticket.help
   git_branch="$(__spp_ticket_get_branch "$jira_id" "$desc")"
   .github.pull "$git_project" "$git_branch" "$jira_id" "$desc"
 }
+alias .tpc=.ticket.create
 
 .ticket.pr.release() {
-  __spp_stat "${FUNCNAME[0]}"
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
   local jira_id="${1:-$(__spp_ticket_get_current)}"
+
+  read -rp "$func_name: Do you want to release: ${jira_id}? [Y/n]" choice
+  if [[ $choice = 'n' ]]; then
+    return 1
+  fi
 
   local git_project
   git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
 
   .jenkins.job "$git_project" "master"
 }
+alias .tpr=.ticket.release
+
 
 .ticket.info() {
-  __spp_stat "${FUNCNAME[0]}"
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
   __spp_ticket_info "${1-$(__spp_ticket_get_current)}"
 }
 alias .ti=.ticket.info
 
 .ticket.ls() {
-  __spp_stat "${FUNCNAME[0]}"
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  local option="${1-}"
   for ticket in "${SPP_TICKETS_PATH}"/*; do
     local jira_id
     jira_id=$(basename "$ticket")
-    __spp_ticket_info "$jira_id"
+    __spp_ticket_info "$jira_id" "$option"
   done
 }
 alias .tls=.ticket.ls
+
+.ticket.switch() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  if [[ ${1-} = '-h' ]]; then
+    echo "usage: $func_name [-h]"
+    return 1
+  fi
+
+  local jira_id
+  jira_id="$(.ticket.ls -p | fzf | awk '{ print $1 }')"
+  if [[ ! -z $jira_id ]]; then
+    __spp_ticket_set_current "$jira_id"
+    .ticket.cd "$jira_id"
+  fi
+}
+alias .ts=.ticket.switch
