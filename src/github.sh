@@ -62,5 +62,5 @@ EOF
     --header "Authorization: token ${SPP_GITHUB_API_TOKEN}" \
     --header "Accept: application/vnd.github.v3+json" \
     --url "${SPP_GITHUB_BASE_URL}/repos/${SPP_GITHUB_OWNER}/${git_project}/pulls" \
-    --data "$data" | python3 -c "import sys, json; print(json.load(sys.stdin)['html_url'])"
+    --data "$data"
 }

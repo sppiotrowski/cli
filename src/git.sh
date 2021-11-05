@@ -12,12 +12,6 @@
     .git.current | grep -o '^[A-Z]\+-[0-9]\+'
 }
 
-.jira() {
-  local ticket
-  ticket="${1:-$(.git.current.jira)}"
-  open "https://outfittery.atlassian.net/browse/$ticket"
-}
-
 .git.ci() {
   DEFAULT="$(.git.project_name)"
   APP_NAME="${1:-"${DEFAULT}"}"

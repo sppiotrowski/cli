@@ -51,14 +51,7 @@ __spp_jira_basic_auth() {
   echo -n "$SPP_JIRA_USER" | base64
 }
 
-.jira.issue() {
-  local func_name="${FUNCNAME[0]}"
-  __spp_stat "$func_name"
-  if [[ $1 = '-h' ]]; then
-    echo "usage: $func_name [-h] jira_id"
-    return 1
-  fi
-
+__spp_jira_issue() {
   local jira_id="$1"
   if [[ -z $jira_id ]]; then
     echo jira_id is missing
@@ -71,3 +64,41 @@ __spp_jira_basic_auth() {
     --header "Content-Type: application/json" \
     --url "${SPP_JIRA_BASE_URL}/${SPP_JIRA_API}/issue/${jira_id}?${SPP_JIRA_PARAM_FIELDS}"
 }
+
+.jira.get() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+
+  if [[ $1 = '-h' ]]; then
+    echo "usage: $func_name [-h] jira_id"
+    return 1
+  fi
+
+  local jira_id="${1-$(.git.current.jira)}"
+
+  read -r -d '' CMD <<EOF
+import json,sys
+issue = json.load(sys.stdin)
+key = issue['key']
+summary = issue['fields']['summary']
+components = list(map(lambda component: component['name'], issue['fields']['components']))
+labels = issue['fields']['labels']
+print(key, components[0], summary)
+EOF
+  __spp_jira_issue "$jira_id" | python3 -c "$CMD"
+}
+
+.jira.open() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+
+  if [[ $1 = '-h' ]]; then
+    echo "usage: $func_name [-h] jira_id"
+    return 1
+  fi
+
+  local jira_id="${1-$(.git.current.jira)}"
+
+  open "${SPP_JIRA_BASE_URL}/browse/${jira_id}"
+}
+alias .jira=.jira.open

@@ -11,6 +11,11 @@ if [[ ! -d "$SPP_TICKETS_PATH" ]]; then
   mkdir -p "$SPP_TICKETS_PATH"
 fi
 
+SPP_TICKETS_DONE_PATH="${SPP_TICKETS_PATH}_done"
+if [[ ! -d "$SPP_TICKETS_DONE_PATH" ]]; then
+  mkdir -p "$SPP_TICKETS_DONE_PATH"
+fi
+
 SPP_TICKET_PROJECTS_PATH="${SPP_CLI_HOME}/tickets_projects"
 if [[ ! -d "$SPP_TICKET_PROJECTS_PATH" ]]; then
   mkdir -p "$SPP_TICKET_PROJECTS_PATH"
@@ -170,6 +175,11 @@ __spp_ticket_info() {
 }
 alias .tadd=.ticket.add
 
+# init
+# * clone
+# * co -b
+# * co
+# * npm i
 
 .ticket.cd() {
   __spp_stat "${FUNCNAME[0]}"
@@ -244,10 +254,22 @@ alias .tc=.ticket.commit
   .ticket.pr.merge   .tpm   # [TODO] merge Github PR to the main branch
   .ticket.rel.build  .trb   # run Jenkins job for the main branch
   .ticket.rel.msg    .trm   # [TODO] create a new Slack pull request request
-  .ticket.done.jira  .tdone # [TODO] close Jira ticket
+  .ticket.done       .tdone # close the ticket
 END
 }
 alias .th=.ticket.help
+
+
+__spp_ticket_git_check_upstream() {
+  local func_name="${1}"
+  if [[ ! -z "$(git branch -r | grep "$git_branch" | head -n 1 )" ]]; then
+    read -rp "$func_name: no upstream branch: push --set-upstream origin ${git_branch}? [Y/n]" choice
+    if [[ $choice = 'n' ]]; then
+      return 1
+    fi
+    git push --set-upstream origin "$git_branch"
+  fi
+}
 
 .ticket.pr.build() {
   local func_name="${FUNCNAME[0]}"
@@ -268,13 +290,12 @@ alias .th=.ticket.help
   local git_branch
   git_branch="$(__spp_ticket_get_branch "$jira_id" "$desc")"
 
-  if [[ ! -z "$(git log --branches --not --remotes --no-walk --decorate --oneline | grep "$git_branch")" ]]; then
-    read -rp "$func_name: not remote, push --set-upstream origin ${git_branch}? [Y/n]" choice
-    if [[ $choice = 'n' ]]; then
-      return 1
-    fi
-    git push --set-upstream origin "$git_branch"
+  read -rp "$func_name: Do you want to build: ${git_branch}? [Y/n]" choice
+  if [[ $choice = 'n' ]]; then
+    return 1
   fi
+
+  __spp_ticket_git_check_upstream "$func_name"
 
   .jenkins.job "$git_project" "$git_branch"
 }
@@ -283,12 +304,8 @@ alias .tpb=.ticket.build
 .ticket.pr.create() {
   local func_name="${FUNCNAME[0]}"
   __spp_stat "$func_name"
-  local jira_id="${1:-$(__spp_ticket_get_current)}"
 
-  read -rp "$func_name: Do you want to create PR for: ${jira_id}? [Y/n]" choice
-  if [[ $choice = 'n' ]]; then
-    return 1
-  fi
+  local jira_id="${1:-$(__spp_ticket_get_current)}"
 
   local git_project
   git_project="$(__spp_ticket_get_value "$jira_id" "$GIT_PROJECT")"
@@ -298,9 +315,17 @@ alias .tpb=.ticket.build
 
   local git_branch
   git_branch="$(__spp_ticket_get_branch "$jira_id" "$desc")"
+
+  read -rp "$func_name: Do you want to create PR for: ${git_branch}? [Y/n]" choice
+  if [[ $choice = 'n' ]]; then
+    return 1
+  fi
+
+  __spp_ticket_git_check_upstream "$func_name"
+
   .github.pull "$git_project" "$git_branch" "$jira_id" "$desc"
 }
-alias .tpc=.ticket.create
+alias .tpc=.ticket.pr.create
 
 .ticket.pr.release() {
   local func_name="${FUNCNAME[0]}"
@@ -355,3 +380,23 @@ alias .tls=.ticket.ls
   fi
 }
 alias .ts=.ticket.switch
+
+
+.ticket.done() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+
+  local jira_id="${1:-$(__spp_ticket_get_current)}"
+
+  read -rp "$func_name: Do you want to set: ${jira_id} as done? [Y/n]" choice
+  if [[ $choice = 'n' ]]; then
+    return 1
+  fi
+
+  # TODO: draw git release
+  # TODO: merge ticket branch to master
+  # TODO: set ticket as done in jira
+
+  mv "${SPP_TICKETS_PATH}/${jira_id}" "${SPP_TICKETS_DONE_PATH}/${jira_id}"
+}
+alias .td=.ticket.done
