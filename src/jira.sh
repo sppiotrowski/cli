@@ -87,6 +87,7 @@ print(key, components[0], summary)
 EOF
   __spp_jira_issue "$jira_id" | python3 -c "$CMD"
 }
+alias .jig=.jira.get
 
 .jira.open() {
   local func_name="${FUNCNAME[0]}"
@@ -101,4 +102,4 @@ EOF
 
   open "${SPP_JIRA_BASE_URL}/browse/${jira_id}"
 }
-alias .jira=.jira.open
+alias .jio=.jira.open

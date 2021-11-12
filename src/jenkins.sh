@@ -7,6 +7,21 @@
 # Jenkins API docs
 # https://www.jenkins.io/doc/book/using/remote-access-api/
 
+.jenkins.open() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+
+  if [[ $1 = '-h' ]]; then
+    echo "usage: $func_name [-h] git_project"
+    return 1
+  fi
+
+  local git_project="${1-$(.git.project_name)}"
+
+  open "${SPP_JENKINS_BASE_URL}/job/docker%20builds/job/build%20${git_project}%20image/"
+}
+alias .jeo=.jenkins.open
+
 .jenkins.build() {
   local func_name="${FUNCNAME[0]}"
   __spp_stat "$func_name"
@@ -34,20 +49,11 @@
     --user "$SPP_JENKINS_USER" \
     --url "${SPP_JENKINS_BASE_URL}/job/docker%20builds/job/${job_name}/buildWithParameters" \
     --data branch="$git_branch"
+
 }
-alias .jb=.jenkins.build
+alias .jeb=.jenkins.build
 
-.jenkins.open() {
-  local func_name="${FUNCNAME[0]}"
-  __spp_stat "$func_name"
-
-  if [[ $1 = '-h' ]]; then
-    echo "usage: $func_name [-h] git_project"
-    return 1
-  fi
-
-  local git_project="${1-$(.git.project_name)}"
-
-  open "${SPP_JENKINS_BASE_URL}/job/docker%20builds/job/build%20${git_project}%20image/"
+.jenkins.build_open() {
+  .jenkins.build && .jenkins.open
 }
-alias .jo=.jenkins.open
+alias .jebo=.jenkins.build_open
