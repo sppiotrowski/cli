@@ -1,65 +1,57 @@
 #!/usr/bin/env bash
 
-TITLE_MARKUP=##
-EDITOR=nvim
+SPP_NOTES_HOME=${HOME}/projects/prv
 
-_note.get() {
-  local file="$1"; shift
-  local topic="$1"; shift
+
+__spp_note_edit() {
+  local topic="$1"
+
   if [ -z "$topic" ]; then
-    local cmd="cat $file"
-  else
-    local cmd="sed -n '/^$TITLE_MARKUP $topic/,/^$TITLE_MARKUP /p' $file"
+    echo topic is missing
+    return 1
   fi
-  eval "$cmd" | sed '1d;$d'
+
+  "$EDITOR" "${SPP_NOTES_HOME}/${topic^^}.md"
 }
 
-_note.edit() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  if [ -z "$topic" ]; then
-    local cmd="$EDITOR $file"
-  else
-    local cmd="$EDITOR +/$topic $file"
-  fi
-  eval "$cmd"
+.note.bash() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  __spp_note_edit bash
 }
+alias .nb=.note.bash
 
-__get_title() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  grep "## $topic$" "$file"
+.note.js() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  __spp_note_edit js
 }
+alias .nj=.note.js
 
-__append() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  local tail="$1"; shift
-  # shellcheck disable=SC1117
-  local cmd="sed -i '' -e '/## $topic/s/$/\' -e '$tail/' $file"
-  eval "$cmd"
+.note.git() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  __spp_note_edit git
 }
+alias .ng=.note.git
 
-_note.add() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  local tail="$*"
-  if [ -z "$(__get_title "$file" "$topic")" ]; then
-    echo '' >> "$file"
-    local cmd="echo '$TITLE_MARKUP $topic' >> $file"
-    eval "$cmd"
-    local cmd_tail="echo '$tail' >> $file"
-    eval "$cmd_tail"
-  else
-    __append "$file" "$topic" "$tail"
-  fi
+.note.vim() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  __spp_note_edit vim
 }
+alias .nv=.note.vim
 
-_note.inline() {
-  local file="$1"; shift
-  local topic="$1"; shift
-  local tail="$*"
-  local cmd="echo '$TITLE_MARKUP $topic': $tail >> $file"
-  eval "$cmd"
+.note.work() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  __spp_note_edit work
 }
+alias .nw=.note.work
 
+.note.prv() {
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
+  __spp_note_edit prv
+}
+alias .np=.note.prv

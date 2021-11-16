@@ -28,15 +28,6 @@
   .git.current | grep -o '^[A-Z]\+-[0-9]\+'
 }
 
-.git.ci() {
-  local func_name="${FUNCNAME[0]}"
-  __spp_stat "$func_name"
-
-  DEFAULT="$(.git.project_name)"
-  APP_NAME="${1:-"${DEFAULT}"}"
-  open "http://ci-1.dev.outfittery.de/search/?q=$APP_NAME"
-}
-
 .git.prune() {
   local func_name="${FUNCNAME[0]}"
   __spp_stat "$func_name"
@@ -48,8 +39,7 @@
 }
 
 __spp_git_url() {
-  # git config --local remote.origin.url | awk -F@ '{print $2}' | sed -e 's/.git//' -e 's/:/\//'
-  git config --local --get remote.origin.url | sed -n 's/^git@\(.*\)\.git$/\1/p'
+  git config --local --get remote.origin.url | sed -n 's/^git@\(.*\)\.git$/\1/p' | tr ':' '/'
 }
 
 .git.pull_request() {
