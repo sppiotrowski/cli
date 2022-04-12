@@ -3,33 +3,21 @@
 PROJECTS_PATH="${HOME}/projects"
 
 .cd() {
-    APP_PART="$1"
-    local path="$PROJECTS_PATH/$APP_PART"
-    if [ -d "$path" ]; then
-      cd "$path" || return 1
-    else
-      cd "$PROJECTS_PATH" || return 1
-    fi
-}
+  local func_name="${FUNCNAME[0]}"
+  __spp_stat "$func_name"
 
-_project_name() {
-  local name="$1"
-  if [ -z "$name" ]; then
-    cmd="ls -d $PROJECTS_PATH/* | xargs basename"
-    eval "$cmd"
+  local part="$1"
+  local projects=($(ls -d ${PROJECTS_PATH}/*${part}* 2> /dev/null))
+
+  if [[ ${#projects[@]} -eq 0 ]]; then
+    # TODO: exclude projects dir from the list
+    cd "$PROJECTS_PATH/$(ls "$PROJECTS_PATH" | fzf)" || return 1
+  elif [[ ${#projects[@]} -eq 1 ]]; then
+    cd "${projects[1]}"
+  elif [[ ${#projects[@]} -gt 1 ]]; then
+    cd "$PROJECTS_PATH/$(find "${PROJECTS_PATH}" -name "*${part}*" -maxdepth 1 -type d -exec basename {} \; | fzf)" || return 1
   else
-    cmd="ls -d $PROJECTS_PATH/*${name}* | xargs basename"
-    eval "$cmd"
+    # TODO: exclude projects dir from the list
+    cd "$PROJECTS_PATH/$(ls "$PROJECTS_PATH" | fzf)" || return 1
   fi
 }
-
-_cd_complete() {
-  # http://www.linuxjournal.com/content/more-using-bash-complete-command
-  # local cmd="${1##*/}"
-  # local line="${COMP_LINE}"
-  local word=${COMP_WORDS[COMP_CWORD]}
-  # COMPREPLY=($(_project_name "$word"))  # shellcheck
-  mapfile -t COMPREPLY < <(_project_name "$word")
-}
-
-complete -F _cd_complete .cd
