@@ -9,7 +9,9 @@
 SPP_STATS_FILE="${SPP_CLI_HOME}/stats"
 
 __spp_stat() {
-  local function_name="$1"
+  # TODO: clar all callres
+  # local function_name="$1"
+  local function_name="$funcstack[-1]"
   echo "$function_name" "$(date +%Y.%m.%dT%H:%M:%S)" >> "$SPP_STATS_FILE"
 }
 
